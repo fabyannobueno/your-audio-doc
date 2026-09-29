@@ -40,7 +40,9 @@ export async function extractPdf(file: File): Promise<DocPage[]> {
 }
 
 export async function extractDocx(file: File): Promise<DocPage[]> {
-  const mammoth = await import("mammoth/mammoth.browser.js");
+  const mammoth = (await import("mammoth/mammoth.browser.js" as string)) as {
+    extractRawText: (input: { arrayBuffer: ArrayBuffer }) => Promise<{ value: string }>;
+  };
   const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
   return paginatePlainText(result.value);
 }

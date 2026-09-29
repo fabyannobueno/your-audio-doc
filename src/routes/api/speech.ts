@@ -147,7 +147,8 @@ export const Route = createFileRoute("/api/speech")({
           offset += part.length;
         }
 
-        return new Response(wavFromPcm(pcm), {
+        const wav = wavFromPcm(pcm);
+        return new Response(wav.buffer as ArrayBuffer, {
           status: 200,
           headers: { "Content-Type": "audio/wav", "Cache-Control": "no-cache" },
         });
