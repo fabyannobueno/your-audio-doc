@@ -18,7 +18,27 @@ export function paginatePlainText(text: string): DocPage[] {
   return pages.length ? pages : [{ text: text.trim() }];
 }
 
+// Safari/iOS lacks async iteration on ReadableStream, which pdf.js uses.
+function polyfillStreamIterator() {
+  const proto = (globalThis as any).ReadableStream?.prototype;
+  if (!proto || proto[Symbol.asyncIterator]) return;
+  proto[Symbol.asyncIterator] = async function* () {
+    const reader = this.getReader();
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) return;
+        yield value;
+      }
+    } finally {
+      reader.releaseLock();
+    }
+  };
+  if (!proto.values) proto.values = proto[Symbol.asyncIterator];
+}
+
 export async function extractPdf(file: File): Promise<DocPage[]> {
+  polyfillStreamIterator();
   const pdfjs = await import("pdfjs-dist");
   const workerSrc = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
   pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
